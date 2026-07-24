@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f6f3ea; }
+  ::selection { background: #44481D; color: #fff; }
+  input, textarea, select { font-family: 'Work Sans', sans-serif; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;font-family:'Work Sans',sans-serif;color:#2c2e18;background:#f6f3ea;padding:36px 48px 90px;box-sizing:border-box;">
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:28px;">
+    <div>
+      <div style="font-family:'Libre Baskerville',serif;font-size:34px;color:#353921;letter-spacing:0.2px;">Controle de Grupos Facebook</div>
+      <div style="font-size:14px;color:#6b6b52;margin-top:6px;">Prospecção em grupos pagos e gratuitos — revisão semanal e visão consolidada mensal</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="file" accept="application/json" ref="{{ fileInputRef }}" onChange="{{ handleFileChange }}" style="display:none" />
+      <input type="file" accept="application/json" ref="{{ weeklyFileInputRef }}" onChange="{{ handleWeeklyFileChange }}" style="display:none" />
+      <button onClick="{{ triggerWeeklyImport }}" style="padding:10px 16px;border-radius:9px;border:1px solid #44481D;background:#eef0e2;color:#353921;font-size:13px;font-weight:600;cursor:pointer;">Importar atualização semanal</button>
+      <button onClick="{{ triggerImport }}" style="padding:10px 16px;border-radius:9px;border:1px solid #c9c3ac;background:#fff;color:#353921;font-size:13px;font-weight:600;cursor:pointer;">Importar backup</button>
+      <button onClick="{{ exportData }}" style="padding:10px 16px;border-radius:9px;border:1px solid #c9c3ac;background:#fff;color:#353921;font-size:13px;font-weight:600;cursor:pointer;">Exportar backup</button>
+      <button onClick="{{ toggleAddForm }}" style="padding:10px 18px;border-radius:9px;border:none;background:#44481D;color:#fdfcf6;font-size:13px;font-weight:700;cursor:pointer;">+ Novo grupo</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:6px;margin-bottom:24px;border-bottom:1px solid #ddd7c2;">
+    <button onClick="{{ setViewSemanal }}" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;border-bottom:2px solid {{ tabSemanalBorder }};color:{{ tabSemanalColor }};">Revisão semanal</button>
+    <button onClick="{{ setViewMensal }}" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;border-bottom:2px solid {{ tabMensalBorder }};color:{{ tabMensalColor }};">Visão mensal</button>
+  </div>
+
+  <sc-if value="{{ showAddForm }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:16px;padding:24px;margin-bottom:24px;">
+      <div style="font-family:'Libre Baskerville',serif;font-size:18px;color:#353921;margin-bottom:16px;">Cadastrar novo grupo</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+        <div>
+          <label style="font-size:11px;color:#7a7a5f;font-weight:600;">NOME DO GRUPO</label>
+          <input value="{{ newNome }}" onChange="{{ setNewNome }}" placeholder="Nome do grupo" style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:14px;" />
+        </div>
+        <div>
+          <label style="font-size:11px;color:#7a7a5f;font-weight:600;">TIPO</label>
+          <select value="{{ newTipo }}" onChange="{{ setNewTipo }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:14px;background:#fff;">
+            <option value="Pago">Pago</option>
+            <option value="Gratuito">Gratuito</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:#7a7a5f;font-weight:600;">CATEGORIA / EIXO</label>
+          <input value="{{ newCategoria }}" onChange="{{ setNewCategoria }}" placeholder="ex: mulher empreendedora" style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:14px;" />
+        </div>
+        <div>
+          <label style="font-size:11px;color:#7a7a5f;font-weight:600;">APROVAÇÃO</label>
+          <select value="{{ newAprovacao }}" onChange="{{ setNewAprovacao }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:14px;background:#fff;">
+            <option value="Automática">Automática</option>
+            <option value="Precisa de admin liberar">Precisa de admin liberar</option>
+            <option value="Livre sem análise">Livre sem análise</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button onClick="{{ submitNewGroup }}" style="padding:10px 20px;border-radius:8px;border:none;background:#44481D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Salvar grupo</button>
+        <button onClick="{{ toggleAddForm }}" style="padding:10px 20px;border-radius:8px;border:1px solid #d8d2ba;background:#fff;color:#5a5a45;font-size:13px;font-weight:600;cursor:pointer;">Cancelar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSemanal }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ hasAttention }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fbf3e3;border:1px solid #e8d9ad;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#5c4a1a;">
+        <strong>Atenção esta semana:</strong> {{ attentionMessage }}
+      </div>
+    </sc-if>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;align-items:center;">
+      <input value="{{ search }}" onChange="{{ setSearch }}" placeholder="Buscar grupo..." style="padding:9px 12px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;min-width:220px;" />
+      <select value="{{ filterTipo }}" onChange="{{ setFilterTipo }}" style="padding:9px 12px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+        <option value="Todos">Todos os tipos</option>
+        <option value="Pago">Pago</option>
+        <option value="Gratuito">Gratuito</option>
+      </select>
+      <select value="{{ filterStatusGeral }}" onChange="{{ setFilterStatusGeral }}" style="padding:9px 12px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+        <option value="Todos">Todos os status</option>
+        <option value="Ativo">Ativo</option>
+        <option value="Testando">Testando</option>
+        <option value="Considerar sair">Considerar sair</option>
+      </select>
+      <label style="font-size:13px;color:#6b6b52;display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <input type="checkbox" checked="{{ showArchived }}" onChange="{{ toggleShowArchived }}" /> Mostrar arquivados ({{ archivedCount }})
+      </label>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <sc-for list="{{ groupsView }}" as="g" hint-placeholder-count="3">
+        <div style="background:{{ g.cardBg }};border:1px solid #e2ddc8;border-radius:16px;padding:22px 24px;opacity:{{ g.cardOpacity }};">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <input value="{{ g.nome }}" onChange="{{ g.setNome }}" style="font-family:'Libre Baskerville',serif;font-size:18px;color:#353921;border:none;background:none;padding:2px 4px;border-radius:6px;min-width:160px;" />
+              <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:{{ g.tipoBadgeBg }};color:{{ g.tipoBadgeColor }};">{{ g.tipo }}</span>
+              <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#eeead9;color:#6b6b52;">{{ g.categoria }}</span>
+              <sc-if value="{{ g.overdue }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:#fbe2df;color:#a13d2e;">revisão atrasada</span>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;background:{{ g.statusGeralBg }};color:{{ g.statusGeralColor }};">{{ g.statusGeral }}</span>
+              <span style="font-size:11px;color:#7a7a5f;">{{ g.postsThisMonth }} post(s) este mês</span>
+              <button onClick="{{ g.logPost }}" style="padding:6px 12px;border-radius:7px;border:1px solid #b9c396;background:#eef0e2;color:#44481D;font-size:12px;font-weight:600;cursor:pointer;">+ Post este mês</button>
+              <button onClick="{{ g.toggleAtivo }}" style="padding:6px 12px;border-radius:7px;border:1px solid #d8d2ba;background:#fff;color:#8a5a45;font-size:12px;cursor:pointer;">{{ g.archiveLabel }}</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">TIPO</label>
+              <select value="{{ g.tipo }}" onChange="{{ g.setTipo }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+                <option value="Pago">Pago</option>
+                <option value="Gratuito">Gratuito</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">CATEGORIA / EIXO</label>
+              <input value="{{ g.categoria }}" onChange="{{ g.setCategoria }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">APROVAÇÃO</label>
+              <select value="{{ g.aprovacao }}" onChange="{{ g.setAprovacao }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+                <option value="Automática">Automática</option>
+                <option value="Precisa de admin liberar">Precisa de admin liberar</option>
+                <option value="Livre sem análise">Livre sem análise</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">STATUS GERAL</label>
+              <select value="{{ g.statusGeral }}" onChange="{{ g.setStatusGeral }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+                <option value="Ativo">Ativo</option>
+                <option value="Testando">Testando</option>
+                <option value="Considerar sair">Considerar sair</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">ÚLTIMO POST</label>
+              <select value="{{ g.statusUltimoPost }}" onChange="{{ g.setStatusUltimoPost }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:{{ g.statusPostBg }};color:{{ g.statusPostColor }};font-weight:600;">
+                <option value="Aprovado">Aprovado</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Recusado">Recusado</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">GEROU CLIENTE?</label>
+              <select value="{{ g.gerouCliente }}" onChange="{{ g.setGerouCliente }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;background:#fff;">
+                <option value="Não sei">Não sei</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+            <div style="grid-column:span 2;">
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">ÚLTIMA REVISÃO</label>
+              <input type="date" value="{{ g.ultimaRevisao }}" onChange="{{ g.setUltimaRevisao }}" style="width:100%;box-sizing:border-box;margin-top:5px;padding:8px 9px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;" />
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px;">
+            <label style="font-size:11px;color:#7a7a5f;font-weight:600;">REGRAS DO GRUPO</label>
+            <textarea value="{{ g.regras }}" onChange="{{ g.setRegras }}" rows="2" placeholder="Dias permitidos, limites, observações..." style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">POST DE REFERÊNCIA (o que performou bem)</label>
+              <textarea value="{{ g.postReferencia }}" onChange="{{ g.setPostReferencia }}" rows="2" placeholder="Anotação livre..." style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a7a5f;font-weight:600;">PONTOS DE MELHORIA</label>
+              <textarea value="{{ g.pontosMelhoria }}" onChange="{{ g.setPontosMelhoria }}" rows="2" placeholder="O que ajustar no próximo post..." style="width:100%;box-sizing:border-box;margin-top:5px;padding:9px 10px;border-radius:8px;border:1px solid #d8d2ba;font-size:13px;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+
+      <sc-if value="{{ noGroups }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:60px 20px;color:#8a8a6f;font-size:14px;">Nenhum grupo encontrado com esses filtros.</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMensal }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:20px;">
+        <div style="font-size:12px;color:#7a7a5f;font-weight:600;">GRUPOS ATIVOS</div>
+        <div style="font-family:'Libre Baskerville',serif;font-size:32px;color:#353921;margin-top:6px;">{{ totalAtivos }}</div>
+      </div>
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:20px;">
+        <div style="font-size:12px;color:#7a7a5f;font-weight:600;">PAGO / GRATUITO</div>
+        <div style="font-family:'Libre Baskerville',serif;font-size:32px;color:#353921;margin-top:6px;">{{ totalPago }} / {{ totalGratuito }}</div>
+      </div>
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:20px;">
+        <div style="font-size:12px;color:#7a7a5f;font-weight:600;">GERARAM CLIENTE</div>
+        <div style="font-family:'Libre Baskerville',serif;font-size:32px;color:#353921;margin-top:6px;">{{ totalGerouCliente }}</div>
+      </div>
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:20px;">
+        <div style="font-size:12px;color:#7a7a5f;font-weight:600;">CONSIDERAR SAIR</div>
+        <div style="font-family:'Libre Baskerville',serif;font-size:32px;color:#a13d2e;margin-top:6px;">{{ totalConsiderarSair }}</div>
+      </div>
+    </div>
+
+    <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:22px;margin-bottom:20px;">
+      <div style="font-family:'Libre Baskerville',serif;font-size:16px;color:#353921;margin-bottom:14px;">Postagens por grupo este mês</div>
+      <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:8px 12px;font-size:12px;color:#7a7a5f;font-weight:600;padding-bottom:8px;border-bottom:1px solid #eee7d3;">
+        <span>GRUPO</span><span>TIPO</span><span>POSTS NO MÊS</span><span>GEROU CLIENTE?</span>
+      </div>
+      <sc-for list="{{ postsMonthList }}" as="p" hint-placeholder-count="3">
+        <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:8px 12px;padding:9px 0;border-bottom:1px solid #f2ede0;font-size:13px;align-items:center;">
+          <span>{{ p.nome }}</span>
+          <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:{{ p.tipoBadgeBg }};color:{{ p.tipoBadgeColor }};display:inline-block;width:fit-content;">{{ p.tipo }}</span>
+          <span>{{ p.postsThisMonth }}</span>
+          <span>{{ p.gerouCliente }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ noPostsMonth }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a6f;padding-top:8px;">Nenhum grupo ativo.</div></sc-if>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:22px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;color:#353921;margin-bottom:14px;">Candidatos a sair</div>
+        <sc-for list="{{ listConsiderarSair }}" as="c" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee7d3;font-size:13px;">
+            <span>{{ c.nome }}</span><span style="color:#8a8a6f;">{{ c.categoria }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noConsiderarSair }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a6f;">Nenhum no momento.</div></sc-if>
+      </div>
+
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:22px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;color:#353921;margin-bottom:14px;">Posts pendentes ou recusados</div>
+        <sc-for list="{{ listAtencaoPost }}" as="a" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee7d3;font-size:13px;">
+            <span>{{ a.nome }}</span><span style="color:{{ a.statusPostColor }};font-weight:600;">{{ a.statusUltimoPost }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noAtencaoPost }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a6f;">Tudo aprovado.</div></sc-if>
+      </div>
+
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:22px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;color:#353921;margin-bottom:14px;">Geraram cliente</div>
+        <sc-for list="{{ listGerouCliente }}" as="cl" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee7d3;font-size:13px;">
+            <span>{{ cl.nome }}</span><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:{{ cl.tipoBadgeBg }};color:{{ cl.tipoBadgeColor }};">{{ cl.tipo }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noGerouCliente }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a6f;">Nenhum registrado ainda.</div></sc-if>
+      </div>
+
+      <div style="background:#fffdf7;border:1px solid #e2ddc8;border-radius:14px;padding:22px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;color:#353921;margin-bottom:14px;">Revisão atrasada (+7 dias)</div>
+        <sc-for list="{{ listOverdue }}" as="o" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee7d3;font-size:13px;">
+            <span>{{ o.nome }}</span><span style="color:#a13d2e;">{{ o.overdueDaysLabel }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noOverdue }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a6f;">Tudo revisado na semana.</div></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STORAGE_KEY = 'fbGruposDashboardData_v1';
+
+const TIPO_COLORS = {
+  'Pago': { bg: '#44481D', color: '#fdfcf6' },
+  'Gratuito': { bg: '#eeead9', color: '#44481D' },
+};
+const STATUS_GERAL_COLORS = {
+  'Ativo': { bg: '#e3e8d2', color: '#3d4620' },
+  'Testando': { bg: '#f5e8c8', color: '#8a6a1f' },
+  'Considerar sair': { bg: '#fbe2df', color: '#a13d2e' },
+};
+const STATUS_POST_COLORS = {
+  'Aprovado': { bg: '#e3e8d2', color: '#3d4620' },
+  'Pendente': { bg: '#f5e8c8', color: '#8a6a1f' },
+  'Recusado': { bg: '#fbe2df', color: '#a13d2e' },
+};
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function seedData() {
+  const t = todayISO();
+  return [
+    { id: 1, nome: 'Mulheres que Empreendem com Fé', tipo: 'Gratuito', categoria: 'mulher empreendedora', aprovacao: 'Precisa de admin liberar', statusUltimoPost: 'Aprovado', regras: 'Postar só às terças e sextas, máximo 1 post por semana.', postReferencia: 'Post com depoimento em vídeo curto teve mais comentários.', pontosMelhoria: 'Testar CTA mais direto no final.', gerouCliente: 'Não sei', statusGeral: 'Ativo', ultimaRevisao: t, ativo: true, postLog: [{ date: t, status: 'Aprovado' }] },
+    { id: 2, nome: 'Espiritualidade e Autoconhecimento BR', tipo: 'Gratuito', categoria: 'espiritualidade', aprovacao: 'Livre sem análise', statusUltimoPost: 'Recusado', regras: 'Proibido link direto, só bio.', postReferencia: '', pontosMelhoria: 'Tirar link do corpo do post, deixar só na bio.', gerouCliente: 'Não', statusGeral: 'Testando', ultimaRevisao: t, ativo: true, postLog: [{ date: t, status: 'Recusado' }] },
+    { id: 3, nome: 'Grupo VIP Tarot & Terapias', tipo: 'Pago', categoria: 'valores/identidade', aprovacao: 'Automática', statusUltimoPost: 'Aprovado', regras: 'Sem restrição, grupo pago.', postReferencia: 'Post de bastidor do atendimento performou bem.', pontosMelhoria: '', gerouCliente: 'Sim', statusGeral: 'Ativo', ultimaRevisao: t, ativo: true, postLog: [{ date: t, status: 'Aprovado' }] },
+  ];
+}
+
+class Component extends DCLogic {
+  state = {
+    groups: [],
+    view: 'semanal',
+    search: '',
+    filterTipo: 'Todos',
+    filterStatusGeral: 'Todos',
+    showArchived: false,
+    showAddForm: false,
+    newNome: '', newTipo: 'Gratuito', newCategoria: '', newAprovacao: 'Precisa de admin liberar',
+  };
+
+  fileInputRef = React.createRef();
+  weeklyFileInputRef = React.createRef();
+
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this.setState({ groups: parsed.groups || [] });
+        return;
+      }
+    } catch (e) {}
+    this.setState({ groups: seedData() });
+  }
+
+  persist(groups) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ groups, savedAt: new Date().toISOString() })); } catch (e) {}
+  }
+
+  updateGroup(id, patch) {
+    this.setState(s => {
+      const groups = s.groups.map(g => g.id === id ? { ...g, ...patch } : g);
+      this.persist(groups);
+      return { groups };
+    });
+  }
+
+  addGroup() {
+    const s = this.state;
+    if (!s.newNome.trim()) return;
+    const g = {
+      id: Date.now(), nome: s.newNome.trim(), tipo: s.newTipo, categoria: s.newCategoria.trim() || 'não definida',
+      aprovacao: s.newAprovacao, statusUltimoPost: 'Pendente', regras: '', postReferencia: '', pontosMelhoria: '',
+      gerouCliente: 'Não sei', statusGeral: 'Testando', ultimaRevisao: todayISO(), ativo: true,
+    };
+    this.setState(s2 => {
+      const groups = [g, ...s2.groups];
+      this.persist(groups);
+      return { groups, showAddForm: false, newNome: '', newCategoria: '', newTipo: 'Gratuito', newAprovacao: 'Precisa de admin liberar' };
+    });
+  }
+
+  exportData() {
+    const blob = new Blob([JSON.stringify({ groups: this.state.groups, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `grupos-facebook-backup-${todayISO()}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  logPost(id) {
+    this.setState(s => {
+      const groups = s.groups.map(g => {
+        if (g.id !== id) return g;
+        const entry = { date: todayISO(), status: g.statusUltimoPost };
+        return { ...g, postLog: [...(g.postLog || []), entry] };
+      });
+      this.persist(groups);
+      return { groups };
+    });
+  }
+
+  mergeGroups(incoming) {
+    this.setState(s => {
+      const groups = [...s.groups];
+      incoming.forEach(inc => {
+        let idx = -1;
+        if (inc.id != null) idx = groups.findIndex(g => g.id === inc.id);
+        if (idx === -1 && inc.nome) idx = groups.findIndex(g => g.nome.trim().toLowerCase() === inc.nome.trim().toLowerCase());
+        if (idx >= 0) {
+          const existing = groups[idx];
+          const mergedLog = [...(existing.postLog || [])];
+          (inc.postLog || []).forEach(e => {
+            if (!mergedLog.some(m => m.date === e.date && m.status === e.status)) mergedLog.push(e);
+          });
+          const patch = {};
+          ['statusUltimoPost', 'aprovacao', 'regras', 'postReferencia', 'pontosMelhoria', 'gerouCliente', 'statusGeral', 'ultimaRevisao', 'categoria', 'tipo'].forEach(k => {
+            if (inc[k] !== undefined && inc[k] !== '') patch[k] = inc[k];
+          });
+          groups[idx] = { ...existing, ...patch, postLog: mergedLog };
+        } else {
+          groups.push({
+            id: inc.id || Date.now() + Math.random(),
+            nome: inc.nome || 'Grupo sem nome', tipo: inc.tipo || 'Gratuito', categoria: inc.categoria || 'não definida',
+            aprovacao: inc.aprovacao || 'Precisa de admin liberar', statusUltimoPost: inc.statusUltimoPost || 'Pendente',
+            regras: inc.regras || '', postReferencia: inc.postReferencia || '', pontosMelhoria: inc.pontosMelhoria || '',
+            gerouCliente: inc.gerouCliente || 'Não sei', statusGeral: inc.statusGeral || 'Testando',
+            ultimaRevisao: inc.ultimaRevisao || todayISO(), ativo: inc.ativo !== undefined ? inc.ativo : true,
+            postLog: inc.postLog || [],
+          });
+        }
+      });
+      this.persist(groups);
+      return { groups };
+    });
+  }
+
+  handleWeeklyFileChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        const incoming = parsed.groups || parsed;
+        if (Array.isArray(incoming)) this.mergeGroups(incoming);
+      } catch (err) {}
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  handleFileChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        const groups = parsed.groups || parsed;
+        if (Array.isArray(groups)) {
+          this.setState({ groups });
+          this.persist(groups);
+        }
+      } catch (err) {}
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const today = new Date();
+
+    const decorate = (g) => {
+      const tipoC = TIPO_COLORS[g.tipo] || TIPO_COLORS['Gratuito'];
+      const sgC = STATUS_GERAL_COLORS[g.statusGeral] || STATUS_GERAL_COLORS['Ativo'];
+      const spC = STATUS_POST_COLORS[g.statusUltimoPost] || STATUS_POST_COLORS['Aprovado'];
+      const revDate = g.ultimaRevisao ? new Date(g.ultimaRevisao) : today;
+      const diffDays = Math.floor((today - revDate) / 86400000);
+      const overdue = diffDays > 7;
+      const curMonth = todayISO().slice(0, 7);
+      const postsThisMonth = (g.postLog || []).filter(e => e.date && e.date.slice(0, 7) === curMonth).length;
+      return {
+        ...g,
+        postsThisMonth,
+        logPost: () => this.logPost(g.id),
+        tipoBadgeBg: tipoC.bg, tipoBadgeColor: tipoC.color,
+        statusGeralBg: sgC.bg, statusGeralColor: sgC.color,
+        statusPostBg: spC.bg, statusPostColor: spC.color,
+        overdue, overdueDays: diffDays, overdueDaysLabel: diffDays + ' dias',
+        cardBg: g.ativo ? '#fffdf7' : '#f2efe4',
+        cardOpacity: g.ativo ? 1 : 0.6,
+        archiveLabel: g.ativo ? 'Arquivar' : 'Reativar',
+        setNome: (e) => this.updateGroup(g.id, { nome: e.target.value }),
+        setTipo: (e) => this.updateGroup(g.id, { tipo: e.target.value }),
+        setCategoria: (e) => this.updateGroup(g.id, { categoria: e.target.value }),
+        setAprovacao: (e) => this.updateGroup(g.id, { aprovacao: e.target.value }),
+        setStatusUltimoPost: (e) => this.updateGroup(g.id, { statusUltimoPost: e.target.value }),
+        setRegras: (e) => this.updateGroup(g.id, { regras: e.target.value }),
+        setPostReferencia: (e) => this.updateGroup(g.id, { postReferencia: e.target.value }),
+        setPontosMelhoria: (e) => this.updateGroup(g.id, { pontosMelhoria: e.target.value }),
+        setGerouCliente: (e) => this.updateGroup(g.id, { gerouCliente: e.target.value }),
+        setStatusGeral: (e) => this.updateGroup(g.id, { statusGeral: e.target.value }),
+        setUltimaRevisao: (e) => this.updateGroup(g.id, { ultimaRevisao: e.target.value }),
+        toggleAtivo: () => this.updateGroup(g.id, { ativo: !g.ativo }),
+      };
+    };
+
+    const search = s.search.toLowerCase();
+    let filtered = s.groups.filter(g => {
+      if (!s.showArchived && !g.ativo) return false;
+      if (s.filterTipo !== 'Todos' && g.tipo !== s.filterTipo) return false;
+      if (s.filterStatusGeral !== 'Todos' && g.statusGeral !== s.filterStatusGeral) return false;
+      if (search && !g.nome.toLowerCase().includes(search) && !g.categoria.toLowerCase().includes(search)) return false;
+      return true;
+    });
+
+    const groupsView = filtered.map(decorate);
+    const activeGroups = s.groups.filter(g => g.ativo).map(decorate);
+
+    const overdueList = activeGroups.filter(g => g.overdue);
+    const attentionPosts = activeGroups.filter(g => g.statusUltimoPost !== 'Aprovado');
+    const attentionParts = [];
+    if (overdueList.length) attentionParts.push(overdueList.length + ' grupo(s) sem revisão há mais de 7 dias');
+    if (attentionPosts.length) attentionParts.push(attentionPosts.length + ' post(s) pendente(s) ou recusado(s)');
+
+    const considerarSair = activeGroups.filter(g => g.statusGeral === 'Considerar sair');
+    const gerouCliente = activeGroups.filter(g => g.gerouCliente === 'Sim');
+
+    return {
+      fileInputRef: this.fileInputRef,
+      triggerImport: () => this.fileInputRef.current && this.fileInputRef.current.click(),
+      handleFileChange: (e) => this.handleFileChange(e),
+      exportData: () => this.exportData(),
+      weeklyFileInputRef: this.weeklyFileInputRef,
+      triggerWeeklyImport: () => this.weeklyFileInputRef.current && this.weeklyFileInputRef.current.click(),
+      handleWeeklyFileChange: (e) => this.handleWeeklyFileChange(e),
+
+      isSemanal: s.view === 'semanal',
+      isMensal: s.view === 'mensal',
+      setViewSemanal: () => this.setState({ view: 'semanal' }),
+      setViewMensal: () => this.setState({ view: 'mensal' }),
+      tabSemanalBorder: s.view === 'semanal' ? '#44481D' : 'transparent',
+      tabMensalBorder: s.view === 'mensal' ? '#44481D' : 'transparent',
+      tabSemanalColor: s.view === 'semanal' ? '#353921' : '#8a8a6f',
+      tabMensalColor: s.view === 'mensal' ? '#353921' : '#8a8a6f',
+
+      showAddForm: s.showAddForm,
+      toggleAddForm: () => this.setState(st => ({ showAddForm: !st.showAddForm })),
+      newNome: s.newNome, setNewNome: (e) => this.setState({ newNome: e.target.value }),
+      newTipo: s.newTipo, setNewTipo: (e) => this.setState({ newTipo: e.target.value }),
+      newCategoria: s.newCategoria, setNewCategoria: (e) => this.setState({ newCategoria: e.target.value }),
+      newAprovacao: s.newAprovacao, setNewAprovacao: (e) => this.setState({ newAprovacao: e.target.value }),
+      submitNewGroup: () => this.addGroup(),
+
+      search: s.search, setSearch: (e) => this.setState({ search: e.target.value }),
+      filterTipo: s.filterTipo, setFilterTipo: (e) => this.setState({ filterTipo: e.target.value }),
+      filterStatusGeral: s.filterStatusGeral, setFilterStatusGeral: (e) => this.setState({ filterStatusGeral: e.target.value }),
+      showArchived: s.showArchived, toggleShowArchived: () => this.setState(st => ({ showArchived: !st.showArchived })),
+      archivedCount: s.groups.filter(g => !g.ativo).length,
+
+      groupsView,
+      noGroups: groupsView.length === 0,
+
+      hasAttention: attentionParts.length > 0,
+      attentionMessage: attentionParts.join(' · '),
+
+      totalAtivos: activeGroups.filter(g => g.statusGeral === 'Ativo').length,
+      totalPago: activeGroups.filter(g => g.tipo === 'Pago').length,
+      totalGratuito: activeGroups.filter(g => g.tipo === 'Gratuito').length,
+      totalGerouCliente: gerouCliente.length,
+      totalConsiderarSair: considerarSair.length,
+
+      listConsiderarSair: considerarSair,
+      noConsiderarSair: considerarSair.length === 0,
+      listAtencaoPost: attentionPosts,
+      noAtencaoPost: attentionPosts.length === 0,
+      listGerouCliente: gerouCliente,
+      noGerouCliente: gerouCliente.length === 0,
+      listOverdue: overdueList,
+      noOverdue: overdueList.length === 0,
+
+      postsMonthList: activeGroups,
+      noPostsMonth: activeGroups.length === 0,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
